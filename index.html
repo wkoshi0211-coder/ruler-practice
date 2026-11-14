@@ -66,15 +66,6 @@ function draw(){
   if(mode!=='cm')for(let i=whole;i<length;i++)bands+='<rect x="'+(X+i*S)+'" y="44" width="4" height="17" fill="#228b50"/>';
   guides+='<path d="M '+(X+length*S)+' 42 V '+RY+'" stroke="#344957" stroke-dasharray="4 3"/>';
  }
- if(aligned()&&mode!=='cm'&&(help==='mm'||style===1&&(mode==='mm'||n<7))){
-  const ex=110,step=52;
-  guides+='<text x="15" y="211" font-size="15" fill="#14663b">mm の めもり</text>';
-  for(let i=0;i<=10;i++){
-   const x=ex+i*step;
-   if(help==='mm'&&i<length%10)guides+='<rect x="'+x+'" y="187" width="'+(step-1)+'" height="18" fill="#9ad6ae"/>';
-   guides+='<path d="M '+x+' 185 v 23" stroke="#466459"/><text x="'+x+'" y="228" text-anchor="middle" font-size="13">'+(i===10?'1 cm':i+' mm')+'</text>';
-  }
- }
  $('board').innerHTML=bands+object()+guides+'<g id="ruler" transform="translate('+rx+' '+ry+')"><rect width="632" height="55" rx="5" fill="#fff0b8" stroke="#c68f37"/>'+marks+'</g>';
 }
 function point(e){const svg=$('board');const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
