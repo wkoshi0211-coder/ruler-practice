@@ -17,13 +17,11 @@
 const $=id=>document.getElementById(id);
 const courses=[
  ['リボンを cm ではかる','ribbon','cm',0,[30,50,20,70,40,80,60,30,90,50]],
- ['消しゴム・付せん・カードをはかる','square','cm',0,[40,50,80,50,70,90,30,60,80,40]],
- ['クリップをはかる','clip','cm',0,[30,40,50,20,30,60,40,50,30,40]],
  ['鉛筆・ペンをはかる','pen','cm',0,[80,100,70,110,90,120,100,80,110,90]],
  ['1 cmより短い長さを mm で読む','ribbon','mm',1,[3,5,7,2,4,6,8,9,1,7]],
  ['cm と のこりの mm を読む','ribbon','both',1,[12,23,33,46,25,38,57,19,64,82]],
  ['ふつうの定規でリボンをはかる','ribbon','both',2,[34,27,41,56,63,18,72,49,24,85]],
- ['ふつうの定規で身近なものをはかる','mixed','both',2,[43,56,82,35,27,46,86,104,113,97]]
+ ['ふつうの定規で鉛筆・ペンをはかる','pen','both',2,[43,56,82,35,27,46,86,104,113,97]]
 ];
 courses.forEach(([name],i)=>$('course').add(new Option(name,i)));
 const S=5,X=190,Y=68,H=29,RY=105,zero=16;
@@ -37,10 +35,10 @@ function screen(id){clearTimeout(advanceTimer);$('correct-mark').hidden=true;for
 $('home').onclick=()=>screen('menu');
 $('start').onclick=$('again').onclick=()=>{data=courses[$('course').value];n=0;screen('play');question()};
 function question(){
- [,kind,mode,style]=data;length=data[4][n];if(kind==='mixed')kind=n<3?'square':n<6?'clip':'pen';
+ [,kind,mode,style]=data;length=data[4][n];
  passed=false;$('check').disabled=false;$('correct-mark').hidden=true;help='';drag=null;rx=0;ry=169;
  if(data===courses[0]&&n<3){rx=X-zero;ry=RY}
- $('progress').textContent=(n+1)+' / 10 もん';$('instruction').textContent=({ribbon:'リボン',square:['消しゴム','付せん','カード'][n%3],clip:'クリップ',pen:n%2?'ペン':'鉛筆'})[kind]+'の '+(kind==='square'?'ながいほう':'ながさ')+'を はかろう';
+ $('progress').textContent=(n+1)+' / 10 もん';$('instruction').textContent=({ribbon:'リボン',pen:n%2?'ペン':'鉛筆'})[kind]+'の '+'ながさ'+'を はかろう';
  $('message').textContent=aligned()?'右はしの めもりを よもう。':'じょうぎを ものの すぐ下に おき、左はしに 0を あわせよう。';
  $('message').className='';$('check').textContent='こたえ';$('hint').disabled=false;
  $('fields').replaceChildren();answers=[];
@@ -51,9 +49,8 @@ function snapTolerance(){return data===courses[0]?{x:24,y:28}:{x:10,y:13}}
 function aligned(){return rx===X-zero&&ry===RY}
 function object(){
  const w=length*S,e=X+w;
- if(kind==='clip')return '<rect x="'+(X+2)+'" y="'+(Y+2)+'" width="'+(w-4)+'" height="25" rx="12.5" fill="none" stroke="#526986" stroke-width="4"/><path d="M '+(e-12)+' 77 H '+(X+15)+' q -9 0 -9 6 t 9 6 H '+(e-19)+'" fill="none" stroke="#526986" stroke-width="2"/>';
  if(kind==='pen')return n%2?'<rect x="'+X+'" y="'+Y+'" width="'+w+'" height="24" rx="6" fill="#5683b2"/><path d="M '+(e-45)+' 69 v 23" stroke="#243e5c" stroke-width="3"/>':'<path d="M '+X+' 69 H '+(e-25)+' L '+e+' 81 L '+(e-25)+' 93 H '+X+' Z" fill="#eda636"/><path d="M '+(e-25)+' 69 L '+e+' 81 L '+(e-25)+' 93 Z" fill="#e5bd8e"/><path d="M '+(e-8)+' 77 L '+e+' 81 L '+(e-8)+' 85 Z" fill="#283944"/>';
- return '<rect x="'+X+'" y="'+Y+'" width="'+w+'" height="'+H+'" rx="'+(kind==='ribbon'?0:4)+'" fill="'+(kind==='ribbon'?'#171717':['#9db8df','#f4ce63','#a9cfab'][n%3])+'"/>';
+ return '<rect x="'+X+'" y="'+Y+'" width="'+w+'" height="'+H+'" rx="'+0+'" fill="'+'#171717'+'"/>';
 }
 function draw(){
  let marks='',bands='',guides='';
