@@ -11,7 +11,7 @@
 @media(max-width:560px){#keypad{grid-template-columns:repeat(6,minmax(0,1fr))}}#keypad .delete-digit{background:#f3a9c6;border-color:#ce7499;color:#54223a;font-size:24px}</style>
 <main><header><h1>じょうぎで はかろう</h1><button id="home" hidden>課題をえらぶ</button></header>
 <section id="menu"><h2>先生と課題をえらぼう</h2><p><select id="course" aria-label="課題"></select></p><div id="intro"></div><button class="primary" id="start">もんだいを はじめる</button></section>
-<section id="play" hidden><div class="row"><strong id="instruction"></strong><small id="progress"></small></div><svg id="board" viewBox="0 0 900 240" aria-label="測るものと動かせる定規"></svg><p id="message" role="status"></p><div id="fields"></div><div id="keypad" aria-label="数字ボタン"></div><div class="row" style="margin-top:12px"><button id="hint">ヒント</button><button id="check" class="primary">こたえ</button></div></section>
+<section id="play" hidden><div class="row"><strong id="instruction"></strong><small id="progress"></small></div><svg id="board" viewBox="0 0 900 240" aria-label="測るものと動かせる定規"></svg><p id="message" role="status"></p><div id="fields"></div><div id="keypad" aria-label="数字ボタン"></div><div class="row" style="margin-top:12px"><button id="show-mm" hidden>mmのめもり</button><button id="hint">ヒント</button><button id="check" class="primary">こたえ</button></div></section>
 <section id="done" hidden><h2>10もん おわったよ！</h2><p>みぢかな ものを ほんものの じょうぎで はかってみよう。</p><button id="again">もういちど</button></section><div id="correct-mark" hidden aria-hidden="true"><span></span></div></main>
 <script>
 const $=id=>document.getElementById(id);
@@ -24,7 +24,7 @@ const courses=[
 ];
 courses.forEach(([name],i)=>$('course').add(new Option(name,i)));
 const S=5,X=190,Y=68,H=29,RY=105,zero=16;
-let data,n,length,kind,mode,style,rx,ry,drag,passed,help,answers,activeAnswer,advanceTimer;
+let data,n,length,kind,mode,style,rx,ry,drag,passed,help,answers,activeAnswer,advanceTimer,waitingForMm;
 function intro(){
  const unit=courses[$('course').value][2];
  $('intro').innerHTML='<p><b>先生とたしかめよう</b></p><p>'+ (unit==='cm'?'0の線から1の線までが1 cm。1の線から2の線までも1 cm。':'1 cmを10こに同じ長さで分けると、線と線の間は1 mm。'+(unit==='both'?' まず何cmあるか見て、その線から右はしまでをmmで数えよう。':''))+'</p>';
@@ -36,15 +36,26 @@ $('start').onclick=$('again').onclick=()=>{data=courses[$('course').value];n=0;s
 function question(){
  [,kind,mode,style]=data;length=data[4][n];
  passed=false;$('check').disabled=false;$('correct-mark').hidden=true;help='';drag=null;rx=0;ry=169;
- if(data===courses[0]&&n<3){rx=X-zero;ry=RY}
+ waitingForMm=style===1&&kind==='ribbon'&&n===0;
+ if(waitingForMm||data===courses[0]&&n<3){rx=X-zero;ry=RY}
  $('progress').textContent=(n+1)+' / 10 もん';$('instruction').textContent=({ribbon:'リボン',pencil:'鉛筆'})[kind]+'の '+'ながさ'+'を はかろう';
- $('message').textContent=aligned()?'右はしの めもりを よもう。':'じょうぎを ものの すぐ下に おき、左はしに 0を あわせよう。';
+ $('message').textContent=waitingForMm?'右はしは、何 cm かな？':aligned()?'右はしの めもりを よもう。':'じょうぎを ものの すぐ下に おき、左はしに 0を あわせよう。';
  $('message').className='';$('check').textContent='こたえ';$('hint').disabled=false;
  $('fields').replaceChildren();answers=[];
  if(mode!=='mm')field('cm',Math.floor(length/10));if(mode!=='cm')field('mm',length%10);
- selectAnswer(answers[0]);draw();
+ selectAnswer(answers[0]);updateMmControls();draw();
 }
 function snapTolerance(){return {x:24,y:28}}
+function updateMmControls(){
+ $('show-mm').hidden=!waitingForMm;
+ $('hint').hidden=waitingForMm;
+ $('check').disabled=waitingForMm;
+}
+$('show-mm').onclick=()=>{
+ waitingForMm=false;
+ updateMmControls();
+ guide(aligned()?'mm':'zero');
+};
 function aligned(){return rx===X-zero&&ry===RY}
 function object(){
  const w=length*S,e=X+w;
@@ -53,14 +64,14 @@ function object(){
 }
 function draw(){
  let marks='',bands='',guides='';
- const last=style===0?10:1, whole=Math.floor(length/10)*10;
+ const last=style===0||waitingForMm?10:1, whole=Math.floor(length/10)*10;
  for(let i=0;i<=120;i+=last){
   const x=zero+i*S, major=i%10===0;
   marks+='<path d="M '+x+' 0 v '+(major?25:i%5===0?17:10)+'" stroke="#233443" stroke-width="'+(major?2:1)+'"/>';
   if(major)marks+='<text x="'+x+'" y="44" text-anchor="middle" font-size="16">'+i/10+'</text>';
  }
  if(!aligned()&&(help==='zero'||data===courses[0]&&n>=3&&n<7))guides='<path d="M '+X+' 62 V 139" stroke="#19776d" stroke-width="2" stroke-dasharray="5 4"/>';
- if(aligned()&&(help==='cm'||help==='mm'||style===1&&mode==='both'&&n<3)){
+ if(!waitingForMm&&aligned()&&(help==='cm'||help==='mm'||style===1&&mode==='both'&&n<3)){
   if(mode!=='mm')for(let i=0;i<whole;i+=10)bands+='<rect x="'+(X+i*S)+'" y="44" width="49" height="17" rx="2" fill="#4987d4"/>';
   if(mode!=='cm')for(let i=whole;i<length;i++)bands+='<rect x="'+(X+i*S)+'" y="44" width="4" height="17" fill="#228b50"/>';
   guides+='<path d="M '+(X+length*S)+' 42 V '+RY+'" stroke="#344957" stroke-dasharray="4 3"/>';
@@ -69,7 +80,7 @@ function draw(){
 }
 function point(e){const svg=$('board');const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
 const board=$('board');board.style.touchAction='none';
-board.onpointerdown=e=>{if(passed||drag||!e.target.closest('#ruler'))return;const p=point(e);drag={id:e.pointerId,x:p.x-rx,y:p.y-ry};board.setPointerCapture(e.pointerId)};
+board.onpointerdown=e=>{if(waitingForMm||passed||drag||!e.target.closest('#ruler'))return;const p=point(e);drag={id:e.pointerId,x:p.x-rx,y:p.y-ry};board.setPointerCapture(e.pointerId)};
 board.onpointermove=e=>{if(drag?.id!==e.pointerId)return;const p=point(e);rx=Math.min(265,Math.max(0,p.x-drag.x));ry=Math.min(183,Math.max(0,p.y-drag.y));draw()};
 board.onpointerup=e=>{if(drag?.id!==e.pointerId)return;drag=null;const tolerance=snapTolerance();if(Math.abs(rx+zero-X)<=tolerance.x&&Math.abs(ry-RY)<=tolerance.y){rx=X-zero;ry=RY;$('message').textContent='右はしの めもりを よもう。';$('message').className=''}draw()};
 board.onpointercancel=board.onlostpointercapture=()=>{drag=null};
