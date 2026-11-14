@@ -109,7 +109,7 @@ function field(unit,correct){
  ctx.lineWidth=7;
  ctx.lineCap='round';
  canvas.onpointerdown=event=>{
-  if(passed||state.value===null||(event.pointerType==='mouse'&&event.button!==0))return;
+  if(passed||state.value===null||event.pointerType==='touch'||(event.pointerType==='mouse'&&event.button!==0))return;
   event.preventDefault();
   active=event.pointerId;
   previous=coord(event);
@@ -142,6 +142,34 @@ function field(unit,correct){
  canvas.onpointercancel=event=>{
   if(active===event.pointerId)active=null;
  };
+  // Use the direct contact stream for fingers and styluses on iPad.
+ canvas.addEventListener('touchstart',event=>{
+  event.preventDefault();
+  if(passed||state.value===null)return;
+  const touch=Array.from(event.changedTouches).find(contact=>contact.touchType==='stylus')
+    ?? event.changedTouches[0];
+  active="touch:"+touch.identifier;
+  previous=coord(touch);
+  ctx.beginPath();
+  ctx.arc(...previous,3.5,0,2*Math.PI);
+  ctx.fill();
+ },{passive:false});
+ canvas.addEventListener('touchmove',event=>{
+  event.preventDefault();
+  if(passed)return;
+  const touch=Array.from(event.changedTouches).find(contact=>"touch:"+contact.identifier===active);
+  if(touch)extendStroke(touch);
+ },{passive:false});
+ canvas.addEventListener('touchend',event=>{
+  event.preventDefault();
+  const touch=Array.from(event.changedTouches).find(contact=>"touch:"+contact.identifier===active);
+  if(!touch)return;
+  if(!passed)extendStroke(touch);
+  active=null;
+ },{passive:false});
+ canvas.addEventListener('touchcancel',event=>{
+  if(Array.from(event.changedTouches).some(contact=>"touch:"+contact.identifier===active))active=null;
+ });
   $('fields').append(wrap);
 }
 function selectAnswer(state){
