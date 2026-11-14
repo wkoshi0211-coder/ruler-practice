@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>じょうぎで はかろう</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#edf5f2;color:#182e39;font:600 17px system-ui,sans-serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}main{max-width:1100px;margin:auto;padding:16px 24px}header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{margin:0;font-size:28px}h2,p{margin:10px 0}button,select{font:inherit;color:inherit;background:white;border:2px solid #c9ded8;border-radius:12px;padding:9px 15px;min-height:44px}button{cursor:pointer}button.primary,button[aria-pressed=true]{background:#15564e;color:white;border-color:#15564e}section{background:white;border-radius:20px;padding:16px;margin-top:12px}#board{width:100%;display:block;height:min(34vh,310px);background:#f6f9fa;border-radius:14px}#ruler,canvas{touch-action:none;cursor:grab}#message{min-height:26px}#fields{display:flex;gap:18px;flex-wrap:wrap}.field{display:flex;align-items:center;gap:8px}canvas{width:150px;height:64px;border:2px dashed #bacccf;border-radius:10px;display:block}#keypad{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}#keypad button{min-width:44px;padding:6px}.number-box{width:68px;height:64px;text-align:center;font-size:24px;border:2px solid #c9ded8;border-radius:12px}.number-box.active{border-color:#15564e;outline:2px solid #15564e;outline-offset:2px}.hidden,[hidden]{display:none!important}small{color:#48616a}.green{color:#14663b}.blue{color:#194c9a}
+*{box-sizing:border-box}body{margin:0;background:#edf5f2;color:#182e39;font:600 17px system-ui,sans-serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}main{max-width:1100px;margin:auto;padding:16px 24px}header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{margin:0;font-size:28px}h2,p{margin:10px 0}button,select{font:inherit;color:inherit;background:white;border:2px solid #c9ded8;border-radius:12px;padding:9px 15px;min-height:44px}button{cursor:pointer}button.primary,button[aria-pressed=true]{background:#15564e;color:white;border-color:#15564e}section{background:white;border-radius:20px;padding:16px;margin-top:12px}#board{width:100%;display:block;height:min(34vh,310px);background:#f6f9fa;border-radius:14px}#ruler,canvas{touch-action:none;cursor:grab}#message{min-height:26px}#fields{display:flex;gap:18px;flex-wrap:wrap}.field{display:flex;align-items:center;gap:8px}canvas{width:150px;height:64px;border:2px dashed #bacccf;border-radius:10px;display:block}#keypad{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}#keypad button{min-width:44px;padding:6px}.number-box{width:68px;height:64px;text-align:center;font-size:24px;border:2px solid #c9ded8;border-radius:12px}.number-box[data-unit=cm]{background:#e5effd;color:#182e39;border-color:#8ab1e5}.number-box.active{border-color:#15564e;outline:2px solid #15564e;outline-offset:2px}.hidden,[hidden]{display:none!important}small{color:#48616a}.green{color:#14663b}.blue{color:#194c9a}
 </style>
 <main><header><h1>じょうぎで はかろう</h1><button id="home" hidden>課題をえらぶ</button></header>
 <section id="menu"><h2>先生と課題をえらぼう</h2><p><select id="course" aria-label="課題"></select></p><div id="intro"></div><button class="primary" id="start">もんだいを はじめる</button></section>
@@ -46,7 +46,7 @@ function object(){
  const w=length*S,e=X+w;
  if(kind==='clip')return '<rect x="'+(X+2)+'" y="'+(Y+2)+'" width="'+(w-4)+'" height="25" rx="12.5" fill="none" stroke="#526986" stroke-width="4"/><path d="M '+(e-12)+' 77 H '+(X+15)+' q -9 0 -9 6 t 9 6 H '+(e-19)+'" fill="none" stroke="#526986" stroke-width="2"/>';
  if(kind==='pen')return n%2?'<rect x="'+X+'" y="'+Y+'" width="'+w+'" height="24" rx="6" fill="#5683b2"/><path d="M '+(e-45)+' 69 v 23" stroke="#243e5c" stroke-width="3"/>':'<path d="M '+X+' 69 H '+(e-25)+' L '+e+' 81 L '+(e-25)+' 93 H '+X+' Z" fill="#eda636"/><path d="M '+(e-25)+' 69 L '+e+' 81 L '+(e-25)+' 93 Z" fill="#e5bd8e"/><path d="M '+(e-8)+' 77 L '+e+' 81 L '+(e-8)+' 85 Z" fill="#283944"/>';
- return '<rect x="'+X+'" y="'+Y+'" width="'+w+'" height="'+H+'" rx="'+(kind==='ribbon'?0:4)+'" fill="'+(kind==='ribbon'?'#cf527d':['#9db8df','#f4ce63','#a9cfab'][n%3])+'"/>';
+ return '<rect x="'+X+'" y="'+Y+'" width="'+w+'" height="'+H+'" rx="'+(kind==='ribbon'?0:4)+'" fill="'+(kind==='ribbon'?'#171717':['#9db8df','#f4ce63','#a9cfab'][n%3])+'"/>';
 }
 function draw(){
  let marks='',bands='',guides='';
@@ -81,7 +81,7 @@ board.onpointerup=e=>{if(drag?.id!==e.pointerId)return;drag=null;const tolerance
 board.onpointercancel=board.onlostpointercapture=()=>{drag=null};
 function field(unit,correct){
  const wrap=document.createElement('div');wrap.className='field';
- wrap.innerHTML='<input class="number-box" type="text" readonly inputmode="none" aria-label="'+unit+'の数字"><canvas width="300" height="128" aria-label="'+unit+'を なぞる"></canvas><button aria-label="'+unit+'を けす">けす</button>';
+ wrap.innerHTML='<input class="number-box" data-unit="'+unit+'" type="text" readonly inputmode="none" aria-label="'+unit+'の数字"><canvas width="300" height="128" aria-label="'+unit+'を なぞる"></canvas><button aria-label="'+unit+'を けす">けす</button>';
  const box=wrap.firstElementChild;
  const state={value:null,correct,unit,ink:0,box};answers.push(state);
  box.onclick=box.onfocus=()=>{if(!passed)selectAnswer(state)};
@@ -131,6 +131,7 @@ $('check').onclick=()=>{
 document.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('selectstart',e=>e.preventDefault());
 </script></html>
+
 
 
 
