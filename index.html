@@ -109,7 +109,7 @@ function field(unit,correct){
  ctx.lineWidth=7;
  ctx.lineCap='round';
  canvas.onpointerdown=event=>{
-  if(passed||state.value===null||!event.isPrimary||event.button!==0)return;
+  if(passed||state.value===null||(event.pointerType==='mouse'&&event.button!==0))return;
   event.preventDefault();
   active=event.pointerId;
   previous=coord(event);
@@ -132,14 +132,14 @@ function field(unit,correct){
   previous=next;
  }
  canvas.onpointermove=event=>{
-  if(active===event.pointerId&&event.buttons!==0)extendStroke(event);
+  if(active===event.pointerId&&(event.pointerType!=='mouse'||event.buttons!==0))extendStroke(event);
  };
  canvas.onpointerup=event=>{
   if(active!==event.pointerId)return;
   extendStroke(event);
   active=null;
  };
- canvas.onpointercancel=canvas.onlostpointercapture=event=>{
+ canvas.onpointercancel=event=>{
   if(active===event.pointerId)active=null;
  };
   $('fields').append(wrap);
