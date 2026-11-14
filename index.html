@@ -8,7 +8,7 @@
 #keypad{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));margin-top:4px}
 #keypad button{min-width:0}
 #play>.row:last-child{margin-top:0!important}
-@media(max-width:560px){#keypad{grid-template-columns:repeat(6,minmax(0,1fr))}}</style>
+@media(max-width:560px){#keypad{grid-template-columns:repeat(6,minmax(0,1fr))}}#keypad .delete-digit{background:#f3a9c6;border-color:#ce7499;color:#54223a;font-size:24px}</style>
 <main><header><h1>じょうぎで はかろう</h1><button id="home" hidden>課題をえらぶ</button></header>
 <section id="menu"><h2>先生と課題をえらぼう</h2><p><select id="course" aria-label="課題"></select></p><div id="intro"></div><button class="primary" id="start">もんだいを はじめる</button></section>
 <section id="play" hidden><div class="row"><strong id="instruction"></strong><small id="progress"></small></div><svg id="board" viewBox="0 0 900 240" aria-label="測るものと動かせる定規"></svg><p id="message" role="status"></p><div id="fields"></div><div id="keypad" aria-label="数字ボタン"></div><div class="row" style="margin-top:12px"><button id="hint">ヒント</button><button id="check" class="primary">こたえ</button></div></section>
@@ -76,14 +76,13 @@ board.onpointerup=e=>{if(drag?.id!==e.pointerId)return;drag=null;const tolerance
 board.onpointercancel=board.onlostpointercapture=()=>{drag=null};
 function field(unit,correct){
  const wrap=document.createElement('div');wrap.className='field';
- wrap.innerHTML='<input class="number-box" data-unit="'+unit+'" type="text" readonly inputmode="none" aria-label="'+unit+'の数字"><canvas width="300" height="128" aria-label="'+unit+'を なぞる"></canvas><button aria-label="'+unit+'を けす">けす</button>';
+ wrap.innerHTML='<input class="number-box" data-unit="'+unit+'" type="text" readonly inputmode="none" aria-label="'+unit+'の数字"><canvas width="300" height="128" aria-label="'+unit+'を なぞる"></canvas>';
  const box=wrap.firstElementChild;
  const state={value:null,correct,unit,ink:0,box};answers.push(state);
  box.onclick=box.onfocus=()=>{if(!passed)selectAnswer(state)};
  const canvas=wrap.querySelector('canvas'),ctx=canvas.getContext('2d');
  function reset(){ctx.clearRect(0,0,300,128);ctx.font='bold 94px system-ui';ctx.textAlign='center';ctx.fillStyle='#bfcdd2';ctx.fillText(unit,150,96);state.ink=0}
  reset();
- wrap.lastElementChild.onclick=()=>{if(!passed)reset()};
  let active=null,previous;
  function coord(e){const r=canvas.getBoundingClientRect();return [(e.clientX-r.left)*300/r.width,(e.clientY-r.top)*128/r.height]}
  canvas.onpointerdown=e=>{if(passed||state.value===null||active!==null)return;active=e.pointerId;previous=coord(e);canvas.setPointerCapture(active)};
@@ -98,7 +97,8 @@ function selectAnswer(state){
 for(const key of ['0','1','2','3','4','5','6','7','8','9','⌫']){
  const button=document.createElement('button');
  button.type='button';
- button.textContent=key;
+ button.textContent=key==='⌫'?'×':key;
+ if(key==='⌫')button.className='delete-digit';
  if(key==='⌫')button.setAttribute('aria-label','数字を1つけす');
  button.onclick=()=>{
   if(passed)return;
