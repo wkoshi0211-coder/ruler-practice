@@ -1,11 +1,11 @@
 <!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>じょうぎで はかろう</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#edf5f2;color:#182e39;font:600 17px system-ui,sans-serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}main{max-width:1100px;margin:auto;padding:16px 24px}header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{margin:0;font-size:28px}h2,p{margin:10px 0}button,select{font:inherit;color:inherit;background:white;border:2px solid #c9ded8;border-radius:12px;padding:9px 15px;min-height:44px}button{cursor:pointer}button.primary,button[aria-pressed=true]{background:#15564e;color:white;border-color:#15564e}section{background:white;border-radius:20px;padding:16px;margin-top:12px}#board{width:100%;display:block;height:min(34vh,310px);background:#f6f9fa;border-radius:14px}#ruler,canvas{touch-action:none;cursor:grab}#message{min-height:26px}#fields{display:flex;gap:18px;flex-wrap:wrap}.field{display:flex;align-items:center;gap:8px}canvas{width:150px;height:64px;border:2px dashed #bacccf;border-radius:10px;display:block}#keypad{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}#keypad button{min-width:44px;padding:6px}.number-box{width:68px;height:64px;text-align:center;font-size:24px;border:2px solid #c9ded8;border-radius:12px}.number-box[data-unit=cm]{background:#a5c7f3;color:#182e39;border-color:#8ab1e5}.number-box.active{border-color:#15564e;outline:2px solid #15564e;outline-offset:2px}.hidden,[hidden]{display:none!important}small{color:#48616a}.green{color:#14663b}.blue{color:#194c9a}
-</style>
+#correct-mark{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:5}#correct-mark span{width:min(30vh,48vw);aspect-ratio:1;border:12px solid #d32335;border-radius:50%;box-shadow:0 0 0 3px white,inset 0 0 0 3px white}</style>
 <main><header><h1>じょうぎで はかろう</h1><button id="home" hidden>課題をえらぶ</button></header>
 <section id="menu"><h2>先生と課題をえらぼう</h2><p><select id="course" aria-label="課題"></select></p><div id="intro"></div><button class="primary" id="start">もんだいを はじめる</button></section>
 <section id="play" hidden><div class="row"><strong id="instruction"></strong><small id="progress"></small></div><svg id="board" viewBox="0 0 900 240" aria-label="測るものと動かせる定規"></svg><p id="message" role="status"></p><div id="fields"></div><div id="keypad" aria-label="数字ボタン"></div><div class="row" style="margin-top:12px"><button id="hint">ヒント</button><button id="check" class="primary">こたえ</button></div></section>
-<section id="done" hidden><h2>10もん おわったよ！</h2><p>みぢかな ものを ほんものの じょうぎで はかってみよう。</p><button id="again">もういちど</button></section></main>
+<section id="done" hidden><h2>10もん おわったよ！</h2><p>みぢかな ものを ほんものの じょうぎで はかってみよう。</p><button id="again">もういちど</button></section><div id="correct-mark" hidden aria-hidden="true"><span></span></div></main>
 <script>
 const $=id=>document.getElementById(id);
 const courses=[
@@ -20,18 +20,18 @@ const courses=[
 ];
 courses.forEach(([name],i)=>$('course').add(new Option(name,i)));
 const S=5,X=190,Y=68,H=29,RY=105,zero=16;
-let data,n,length,kind,mode,style,rx,ry,drag,passed,help,answers,activeAnswer;
+let data,n,length,kind,mode,style,rx,ry,drag,passed,help,answers,activeAnswer,advanceTimer;
 function intro(){
  const unit=courses[$('course').value][2];
  $('intro').innerHTML='<p><b>先生とたしかめよう</b></p><p>'+ (unit==='cm'?'0の線から1の線までが1 cm。1の線から2の線までも1 cm。':'1 cmを10こに同じ長さで分けると、線と線の間は1 mm。'+(unit==='both'?' まず何cmあるか見て、その線から右はしまでをmmで数えよう。':''))+'</p>';
 }
 $('course').onchange=intro;intro();
-function screen(id){for(const key of ['menu','play','done'])$(key).hidden=key!==id;$('home').hidden=id==='menu'}
+function screen(id){clearTimeout(advanceTimer);$('correct-mark').hidden=true;for(const key of ['menu','play','done'])$(key).hidden=key!==id;$('home').hidden=id==='menu'}
 $('home').onclick=()=>screen('menu');
 $('start').onclick=$('again').onclick=()=>{data=courses[$('course').value];n=0;screen('play');question()};
 function question(){
  [,kind,mode,style]=data;length=data[4][n];if(kind==='mixed')kind=n<3?'square':n<6?'clip':'pen';
- passed=false;help='';drag=null;rx=0;ry=169;
+ passed=false;$('check').disabled=false;$('correct-mark').hidden=true;help='';drag=null;rx=0;ry=169;
  if(data===courses[0]&&n<3){rx=X-zero;ry=RY}
  $('progress').textContent=(n+1)+' / 10 もん';$('instruction').textContent=({ribbon:'リボン',square:['消しゴム','付せん','カード'][n%3],clip:'クリップ',pen:n%2?'ペン':'鉛筆'})[kind]+'の '+(kind==='square'?'ながいほう':'ながさ')+'を はかろう';
  $('message').textContent=aligned()?'右はしの めもりを よもう。':'じょうぎを ものの すぐ下に おき、左はしに 0を あわせよう。';
@@ -121,12 +121,12 @@ function guide(type){
 }
 $('hint').onclick=()=>guide(!aligned()?'zero':answers.find(a=>a.value!==a.correct)?.unit??(mode==='cm'?'cm':'mm'));
 $('check').onclick=()=>{
- if(passed){if(++n===10)screen('done');else question();return}
+ if(passed)return;
  if(!aligned()){guide('zero');return}
  const missing=answers.find(a=>a.value===null||a.ink<24);
  if(missing){$('message').className='';$('message').textContent=missing.value===null?'数字を えらぼう。':missing.unit+'を ゆびで なぞろう。';return}
  const wrong=answers.find(a=>a.value!==a.correct);if(wrong){guide(wrong.unit);return}
- passed=true;$('hint').disabled=true;$('message').className='green';$('message').textContent='せいかい！ '+answers.map(a=>a.correct+' '+a.unit).join(' ');$('check').textContent=n===9?'おわり':'つぎのもんだい';
+ passed=true;$('hint').disabled=true;$('message').className='green';$('message').textContent='せいかい！ '+answers.map(a=>a.correct+' '+a.unit).join(' ');$('check').disabled=true;$('correct-mark').hidden=false;advanceTimer=setTimeout(()=>{if(++n===data[4].length)screen('done');else question()},1100);
 };
 document.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('selectstart',e=>e.preventDefault());
