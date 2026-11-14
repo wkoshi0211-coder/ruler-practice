@@ -78,7 +78,7 @@ function object(){
  return '<rect x="'+X+'" y="'+Y+'" width="'+w+'" height="'+H+'" rx="'+0+'" fill="'+'#171717'+'"/>';
 }
 function draw(){
- const canZoom=aligned()&&!waitingForMm&&help==='mm'&&length%10>0;
+ const canZoom=aligned()&&!waitingForMm&&(help==='mm'||help==='cm')&&mode!=='cm'&&length%10>0;
  if(!canZoom)zoomMm=false;
  const zoomButton=$('zoom-mm');
  zoomButton.hidden=!canZoom;
