@@ -9,7 +9,8 @@
 #keypad button{min-width:0}
 #play>.row:last-child{margin-top:0!important}
 @media(max-width:560px){#keypad{grid-template-columns:repeat(6,minmax(0,1fr))}}#keypad .delete-digit{background:#f3a9c6;border-color:#ce7499;color:#54223a;font-size:24px}#show-mm{align-self:center;min-height:52px;padding:8px 30px;font-size:23px;background:#d4efdf;border-color:#4e926c}#show-mm[aria-pressed=true]{background:#14663b;color:white}#play:has(#show-mm:not([hidden])) #board{flex:0 0 auto;height:clamp(165px,24vw,300px);margin-bottom:-12px}html:has(#play:not([hidden])),body:has(#play:not([hidden])){overflow:hidden;overscroll-behavior:none}
-#play{touch-action:none}
+body:has(#play:not([hidden])){position:fixed;inset:0}
+
 @media(max-height:540px){#board{flex-basis:120px;min-height:120px}#play:has(#show-mm:not([hidden])) #board{height:120px}#play{gap:4px}canvas,.number-box{height:60px}}
 </style>
 <main><header><h1>じょうぎで はかろう</h1><button id="home" hidden>課題をえらぶ</button></header>
@@ -208,9 +209,7 @@ $('check').onclick=()=>{
  const wrong=answers.find(a=>a.value!==a.correct);if(wrong){guide(wrong.unit);return}
  passed=true;$('hint').disabled=true;$('message').className='green';$('message').textContent='せいかい！ '+answers.map(a=>a.correct+' '+a.unit).join(' ');$('check').disabled=true;$('correct-mark').hidden=false;advanceTimer=setTimeout(()=>{if(++n===data[4].length)screen('done');else question()},1100);
 };
-document.addEventListener('touchmove',event=>{
- if(!$('play').hidden&&event.cancelable)event.preventDefault();
-},{passive:false});
+
 document.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('selectstart',e=>e.preventDefault());
 </script></html>
