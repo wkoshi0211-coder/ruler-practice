@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>じょうぎで はかろう</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#edf5f2;color:#182e39;font:600 17px system-ui,sans-serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}main{max-width:1100px;margin:auto;padding:16px 24px}header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{margin:0;font-size:28px}h2,p{margin:10px 0}button,select{font:inherit;color:inherit;background:white;border:2px solid #c9ded8;border-radius:12px;padding:9px 15px;min-height:44px}button{cursor:pointer}button.primary,button[aria-pressed=true]{background:#15564e;color:white;border-color:#15564e}section{background:white;border-radius:20px;padding:16px;margin-top:12px}#board{width:100%;display:block;height:min(34vh,310px);background:#f6f9fa;border-radius:14px}#ruler,canvas{touch-action:none;cursor:grab}#message{min-height:26px}#fields{display:flex;gap:18px;flex-wrap:wrap}.field{display:flex;align-items:center;gap:8px}canvas{width:150px;height:64px;border:2px dashed #bacccf;border-radius:10px;display:block}#keypad{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}#keypad button{min-width:44px;padding:6px}.number-box{width:68px;height:64px;text-align:center;font-size:24px;border:2px solid #c9ded8;border-radius:12px}.number-box[data-unit=cm]{background:#a5c7f3;color:#182e39;border-color:#8ab1e5}.number-box[data-unit=mm]{background:#a4d4b8;color:#182e39;border-color:#6eae88}.number-box.active{border-color:#15564e;outline:2px solid #15564e;outline-offset:2px}.hidden,[hidden]{display:none!important}small{color:#48616a}.green{color:#14663b}.blue{color:#194c9a}
+*{box-sizing:border-box}body{margin:0;background:#edf5f2;color:#182e39;font:600 17px system-ui,sans-serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}main{max-width:1100px;margin:auto;padding:16px 24px}header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{margin:0;font-size:28px}h2,p{margin:10px 0}button,select{font:inherit;color:inherit;background:white;border:2px solid #c9ded8;border-radius:12px;padding:9px 15px;min-height:44px}button{cursor:pointer}button.primary,button[aria-pressed=true]{background:#15564e;color:white;border-color:#15564e}section{background:white;border-radius:20px;padding:16px;margin-top:12px}#board{width:100%;display:block;height:min(34vh,310px);background:#f6f9fa;border-radius:14px}#ruler,canvas{touch-action:none;cursor:grab}#message{min-height:26px}#fields{display:flex;gap:18px;flex-wrap:wrap}.field{display:flex;align-items:center;gap:8px}canvas{width:196px;height:76px;border:2px dashed #bacccf;border-radius:10px;display:block}#keypad{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}#keypad button{min-width:44px;padding:6px}.number-box{width:68px;height:64px;text-align:center;font-size:24px;border:2px solid #c9ded8;border-radius:12px}.number-box[data-unit=cm]{background:#a5c7f3;color:#182e39;border-color:#8ab1e5}.number-box[data-unit=mm]{background:#a4d4b8;color:#182e39;border-color:#6eae88}.number-box.active{border-color:#15564e;outline:2px solid #15564e;outline-offset:2px}.hidden,[hidden]{display:none!important}small{color:#48616a}.green{color:#14663b}.blue{color:#194c9a}
 #correct-mark{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:5}#correct-mark span{width:min(30vh,48vw);aspect-ratio:1;border:12px solid #d32335;border-radius:50%;box-shadow:0 0 0 3px white,inset 0 0 0 3px white}main{max-width:none;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:clamp(8px,1.4vw,20px)}
 #play{flex:1;display:flex;flex-direction:column;gap:8px;padding:clamp(10px,1.4vw,20px)}
 #board{flex:1 0 165px;height:165px;min-height:165px;max-height:none}
@@ -97,14 +97,52 @@ function field(unit,correct){
  const state={value:null,correct,unit,ink:0,box};answers.push(state);
  box.onclick=box.onfocus=()=>{if(!passed)selectAnswer(state)};
  const canvas=wrap.querySelector('canvas'),ctx=canvas.getContext('2d');
- function reset(){ctx.clearRect(0,0,300,128);ctx.font='bold 94px system-ui';ctx.textAlign='center';ctx.fillStyle='#bfcdd2';ctx.fillText(unit,150,96);state.ink=0}
+ function reset(){ctx.clearRect(0,0,300,128);ctx.font='bold 94px system-ui';ctx.textAlign='center';ctx.fillStyle='#bfcdd2';ctx.fillText(unit,150,96,230);state.ink=0}
  reset();
  let active=null,previous;
- function coord(e){const r=canvas.getBoundingClientRect();return [(e.clientX-r.left)*300/r.width,(e.clientY-r.top)*128/r.height]}
- canvas.onpointerdown=e=>{if(passed||state.value===null||active!==null)return;active=e.pointerId;previous=coord(e);canvas.setPointerCapture(active)};
- canvas.onpointermove=e=>{if(active!==e.pointerId)return;const next=coord(e);ctx.strokeStyle=unit==='cm'?'#194c9a':'#14663b';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(...previous);ctx.lineTo(...next);ctx.stroke();if(next[0]>45&&next[0]<255&&next[1]>25&&next[1]<108)state.ink+=Math.hypot(next[0]-previous[0],next[1]-previous[1]);previous=next};
- canvas.onpointerup=canvas.onpointercancel=canvas.onlostpointercapture=e=>{if(active===e.pointerId)active=null};
- $('fields').append(wrap);
+ function coord(event){
+  const rect=canvas.getBoundingClientRect();
+  return [(event.clientX-rect.left)*300/rect.width,(event.clientY-rect.top)*128/rect.height];
+ }
+ ctx.strokeStyle=unit==='cm'?'#194c9a':'#14663b';
+ ctx.fillStyle=ctx.strokeStyle;
+ ctx.lineWidth=7;
+ ctx.lineCap='round';
+ canvas.onpointerdown=event=>{
+  if(passed||state.value===null||!event.isPrimary||event.button!==0)return;
+  event.preventDefault();
+  active=event.pointerId;
+  previous=coord(event);
+  ctx.beginPath();
+  ctx.arc(...previous,3.5,0,2*Math.PI);
+  ctx.fill();
+  try{canvas.setPointerCapture(active)}catch(error){
+   if(error.name!=='NotFoundError')throw error;
+  }
+ };
+ function extendStroke(event){
+  const next=coord(event);
+  ctx.beginPath();
+  ctx.moveTo(...previous);
+  ctx.lineTo(...next);
+  ctx.stroke();
+  if(next[0]>25&&next[0]<275&&next[1]>20&&next[1]<115){
+   state.ink+=Math.hypot(next[0]-previous[0],next[1]-previous[1]);
+  }
+  previous=next;
+ }
+ canvas.onpointermove=event=>{
+  if(active===event.pointerId&&event.buttons!==0)extendStroke(event);
+ };
+ canvas.onpointerup=event=>{
+  if(active!==event.pointerId)return;
+  extendStroke(event);
+  active=null;
+ };
+ canvas.onpointercancel=canvas.onlostpointercapture=event=>{
+  if(active===event.pointerId)active=null;
+ };
+  $('fields').append(wrap);
 }
 function selectAnswer(state){
  activeAnswer=state;
