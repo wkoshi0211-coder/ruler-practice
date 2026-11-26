@@ -12,10 +12,13 @@
 body:has(#play:not([hidden])){position:fixed;inset:0}
 
 @media(max-height:540px){#board{flex-basis:120px;min-height:120px}#play:has(#show-mm:not([hidden])) #board{height:120px}#play{gap:4px}canvas,.number-box{height:60px}}
-.hint-actions{display:flex;gap:8px}#zoom-mm{background:#d4efdf;border-color:#4e926c}#board.zoom-mm{width:min(100%,560px);align-self:center}#board [data-mm-cell]{cursor:pointer;touch-action:manipulation}#reset-mm{align-self:center;background:#d4efdf;border-color:#4e926c}</style>
+.hint-actions{display:flex;gap:8px}#zoom-mm{background:#d4efdf;border-color:#4e926c}#board.zoom-mm{width:min(100%,560px);align-self:center}#board [data-mm-cell]{cursor:pointer;touch-action:manipulation}#reset-mm{align-self:center;background:#d4efdf;border-color:#4e926c}
+#measure-stage{display:flex;flex:1;min-height:165px;gap:12px}#measure-stage #board{min-width:0}#pair-fields{width:370px;flex-shrink:0;display:grid;grid-template-rows:1fr 1fr;gap:12px}.pair-answer{border:3px solid transparent;border-radius:14px;padding:10px;display:flex;flex-direction:column;justify-content:center;gap:8px}.pair-answer.current{border-color:#15564e;background:#f2f8f5}.pair-answer #fields{gap:10px}.pair-answer .field{gap:5px}.pair-answer canvas{width:105px;height:76px}.pair-answer .number-box{width:56px}.pair-summary{font-size:27px;display:flex;gap:12px}.pair-summary .cm{background:#a5c7f3;padding:5px;border-radius:8px}.pair-summary .mm{background:#a4d4b8;padding:5px;border-radius:8px}#play.pair-mode #board{min-height:300px;height:100%;align-self:stretch}#play.pair-mode #measure-stage{min-height:300px}#compare-choices{display:flex;justify-content:center;gap:24px}#compare-choices button{min-width:180px;min-height:62px;font-size:25px}#compare-help{padding:8px 16px;background:#f2f8f5;border-radius:12px}#compare-help p{margin:4px}.compare-cells{display:flex;align-items:center;gap:5px;margin:8px 0}.compare-cell{width:44px;height:44px;min-height:44px;padding:0;border:2px solid #367854;border-radius:3px;background:#a4d4b8;touch-action:none}.compare-cell.counted{background:#14663b}.compare-cells strong{width:30px}.pair-label{font-size:20px}@media(max-height:650px){#play.pair-mode #measure-stage,#play.pair-mode #board{min-height:240px}.pair-answer canvas{height:64px}.pair-answer .number-box{height:58px}#compare-help{font-size:16px}.compare-cell{width:36px;height:36px;min-height:36px}}
+#play.comparing #measure-stage,#play.comparing #board{min-height:180px}#play.comparing .pair-answer{padding:4px}#play.comparing #measure-stage{flex:1 1 180px}#play.comparing #board{height:180px}#play.comparing #pair-fields{gap:4px}
+</style>
 <main><header><h1>じょうぎで はかろう</h1><button id="home" hidden>課題をえらぶ</button></header>
 <section id="menu"><h2>先生と課題をえらぼう</h2><p><select id="course" aria-label="課題"></select></p><div id="intro"></div><button class="primary" id="start">もんだいを はじめる</button></section>
-<section id="play" hidden><div class="row"><strong id="instruction"></strong><small id="progress"></small></div><svg id="board" viewBox="0 0 900 240" aria-label="測るものと動かせる定規"></svg><button id="reset-mm" hidden>はじめから かぞえる</button><button id="show-mm" hidden aria-pressed="false">mmのめもり</button><p id="message" role="status"></p><div id="fields"></div><div id="keypad" aria-label="数字ボタン"></div><div class="row" style="margin-top:12px"><div class="hint-actions"><button id="hint">ヒント</button><button id="zoom-mm" hidden aria-pressed="false">大きくする</button></div><button id="check" class="primary">こたえ</button></div></section>
+<section id="play" hidden><div class="row"><strong id="instruction"></strong><small id="progress"></small></div><div id="measure-stage"><svg id="board" viewBox="0 0 900 240" aria-label="測るものと動かせる定規"></svg><aside id="pair-fields" hidden><div id="pair-a" class="pair-answer"><strong>Ａの鉛筆</strong><div id="answer-a"></div></div><div id="pair-b" class="pair-answer"><strong>Ｂの鉛筆</strong><div id="answer-b"></div></div></aside></div><div id="compare-help" hidden></div><div id="compare-choices" hidden><button data-choice="0">Ａの鉛筆</button><button data-choice="1">Ｂの鉛筆</button></div><button id="reset-mm" hidden>はじめから かぞえる</button><button id="show-mm" hidden aria-pressed="false">mmのめもり</button><p id="message" role="status"></p><div id="fields"></div><div id="keypad" aria-label="数字ボタン"></div><div class="row" style="margin-top:12px"><div class="hint-actions"><button id="hint">ヒント</button><button id="zoom-mm" hidden aria-pressed="false">大きくする</button></div><button id="check" class="primary">こたえ</button></div></section>
 <section id="done" hidden><h2>10もん おわったよ！</h2><p>みぢかな ものを ほんものの じょうぎで はかってみよう。</p><button id="again">もういちど</button></section><div id="correct-mark" hidden aria-hidden="true"><span></span></div></main>
 <script>
 const $=id=>document.getElementById(id);
@@ -37,13 +40,69 @@ $('course').onchange=intro;intro();
 function screen(id){clearTimeout(advanceTimer);$('correct-mark').hidden=true;for(const key of ['menu','play','done'])$(key).hidden=key!==id;$('home').hidden=id==='menu'}
 $('home').onclick=()=>screen('menu');
 $('start').onclick=$('again').onclick=()=>{data=courses[$('course').value];n=0;screen('play');question()};
+let pairMode=false,pairLengths=[],pairIndex=0,pairResults=[],comparing=false;
 let zoomMm=false;
+function pairOffset(){return pairMode?pairIndex*150:0}
+function setupPair(){
+ pairMode=kind==='pencil'&&n>=7;pairIndex=0;pairResults=[];comparing=false;
+ pairLengths=mode==='cm'?[[70,110],[90,80],[80,100]][n-7]:[[52,58],[76,74],[83,86]][n-7];
+ $('play').classList.toggle('pair-mode',pairMode);$('pair-fields').hidden=!pairMode;
+ $('compare-help').hidden=true;$('compare-choices').hidden=true;$('keypad').hidden=false;$('check').hidden=false;
+ $('keypad').before($('fields'));$('answer-a').replaceChildren();$('answer-b').replaceChildren();
+ if(pairMode)length=pairLengths[0];
+}
+function placePairFields(){
+ if(!pairMode){$('keypad').before($('fields'));return}
+ $('answer-'+(pairIndex?'b':'a')).append($('fields'));
+ $('pair-a').classList.toggle('current',pairIndex===0&&!comparing);
+ $('pair-b').classList.toggle('current',pairIndex===1&&!comparing);
+ $('instruction').textContent=(pairIndex?'Ｂ':'Ａ')+'の鉛筆を はかろう';
+}
+function savePairResult(){
+ const label=pairIndex?'b':'a';
+ $('keypad').before($('fields'));
+ const summary=document.createElement('div');summary.className='pair-summary';
+ summary.innerHTML=answers.map(a=>'<span class="'+a.unit+'">'+a.correct+' '+a.unit+'</span>').join('');
+ $('answer-'+label).append(summary);pairResults[pairIndex]=length;
+}
+function nextPair(){
+ savePairResult();passed=false;$('correct-mark').hidden=true;zoomMm=false;countedMm.clear();help='';
+ if(pairIndex===0){
+  pairIndex=1;length=pairLengths[1];answers=[];$('fields').replaceChildren();
+  if(mode!=='mm')field('cm',Math.floor(length/10));if(mode!=='cm')field('mm',length%10);
+  selectAnswer(answers[0]);placePairFields();$('hint').disabled=false;$('check').disabled=false;
+  $('message').textContent='同じ じょうぎを Ｂの鉛筆に あわせよう。';draw();
+ }else{
+  comparing=true;$('play').classList.add('comparing');$('pair-a').classList.remove('current');$('pair-b').classList.remove('current');
+  $('instruction').textContent='どちらが ながい？';$('message').textContent='はかった ながさを くらべて、えらぼう。';
+  $('keypad').hidden=true;$('check').hidden=true;$('compare-choices').hidden=false;$('hint').disabled=false;draw();
+ }
+}
+function comparisonHint(){
+ const area=$('compare-help');area.hidden=false;
+ const amounts=pairLengths.map(v=>mode==='cm'?v/10:v%10);
+ area.innerHTML='<p>'+(mode==='cm'?'あおい マスが おおいのは どちら？':'cmは どちらも '+Math.floor(pairLengths[0]/10)+' cm。みどりの マスが おおいのは どちら？')+'</p>'+amounts.map((count,row)=>'<div class="compare-cells"><strong>'+['Ａ','Ｂ'][row]+'</strong>'+Array.from({length:count},()=>'<button class="compare-cell" aria-label="'+(mode==='cm'?'1 cm':'1 mm')+'のマス" aria-pressed="false"'+(mode==='cm'?' style="background:#a5c7f3;border-color:#194c9a"':'')+'></button>').join('')+'</div>').join('')+'<button id="reset-compare">はじめから かぞえる</button>';
+ for(const cell of area.querySelectorAll('.compare-cell')){
+  const count=e=>{if(passed)return;if(e.cancelable)e.preventDefault();cell.classList.add('counted');cell.style.background=mode==='cm'?'#194c9a':'#14663b';cell.setAttribute('aria-pressed','true')};
+  cell.onpointerdown=count;cell.onclick=count;cell.addEventListener('touchstart',count,{passive:false});
+ }
+ $('reset-compare').onclick=comparisonHint;
+}
+for(const button of $('compare-choices').querySelectorAll('button'))button.onclick=()=>{
+ if(passed||!comparing)return;
+ if(pairLengths[Number(button.dataset.choice)]!==Math.max(...pairLengths)){$('message').textContent='もういちど、ながさを くらべよう。';comparisonHint();return}
+ finishQuestion();
+};
+function finishQuestion(){
+ passed=true;$('hint').disabled=true;$('check').disabled=true;$('correct-mark').hidden=false;$('message').textContent='せいかい！';
+ advanceTimer=setTimeout(()=>{if(++n===data[4].length)screen('done');else question()},1100);
+}
 const countedMm=new Set();
 function question(){
  zoomMm=false;
  countedMm.clear();
- [,kind,mode,style]=data;length=data[4][n];
- passed=false;$('check').disabled=false;$('correct-mark').hidden=true;help='';drag=null;rx=0;ry=169;
+ [,kind,mode,style]=data;length=data[4][n];setupPair();
+ passed=false;$('check').disabled=false;$('correct-mark').hidden=true;help='';drag=null;rx=pairMode?X-zero:0;ry=pairMode?145:169;$('play').classList.remove('comparing');
  mmIntro=style===1&&kind==='ribbon'&&n===0;waitingForMm=mmIntro;
  if(waitingForMm||data===courses[0]&&n<3){rx=X-zero;ry=rulerTop()}
  $('progress').textContent=(n+1)+' / 10 もん';$('instruction').textContent=({ribbon:'リボン',pencil:'鉛筆'})[kind]+'の '+'ながさ'+'を はかろう';
@@ -51,7 +110,7 @@ function question(){
  $('message').className='';$('check').textContent='こたえ';$('hint').disabled=false;
  $('fields').replaceChildren();answers=[];
  if(mode!=='mm')field('cm',Math.floor(length/10));if(mode!=='cm')field('mm',length%10);
- selectAnswer(answers[0]);updateMmControls();draw();
+ selectAnswer(answers[0]);placePairFields();updateMmControls();draw();
 }
 function snapTolerance(){return {x:24,y:28}}
 function updateMmControls(){
@@ -71,15 +130,20 @@ $('show-mm').onclick=()=>{
   draw();
  }else guide('mm');
 };
-function rulerTop(){return kind==='pencil'?PENCIL_BOTTOM:Y+H}
+function rulerTop(){return (kind==='pencil'?PENCIL_BOTTOM:Y+H)+pairOffset()}
 function aligned(){return rx===X-zero&&ry===rulerTop()}
 function object(){
  const w=length*S,e=X+w;
  if(kind==='pencil')return '<path d="M '+X+' 69 H '+(e-25)+' L '+e+' 81 L '+(e-25)+' '+PENCIL_BOTTOM+' H '+X+' Z" fill="#171717"/><path d="M '+(e-25)+' 69 L '+e+' 81 L '+(e-25)+' '+PENCIL_BOTTOM+' Z" fill="#e5bd8e"/><path d="M '+(e-8)+' 77 L '+e+' 81 L '+(e-8)+' 85 Z" fill="#283944"/>';
  return '<rect x="'+X+'" y="'+Y+'" width="'+w+'" height="'+H+'" rx="'+0+'" fill="'+'#171717'+'"/>';
 }
+function pairObjects(){
+ const saved=length;
+ const result=pairLengths.map((v,i)=>{length=v;return '<g transform="translate(0 '+(i*150)+')"><text x="145" y="87" font-size="23">'+['Ａ','Ｂ'][i]+'</text>'+object()+'</g>'}).join('');
+ length=saved;return result;
+}
 function draw(){
- const canZoom=aligned()&&!waitingForMm&&(help==='mm'||help==='cm')&&mode!=='cm'&&length%10>0;
+ const canZoom=!comparing&&aligned()&&!waitingForMm&&(help==='mm'||help==='cm')&&mode!=='cm'&&length%10>0;
  if(!canZoom)zoomMm=false;
  const zoomButton=$('zoom-mm');
  zoomButton.hidden=!canZoom;
@@ -88,7 +152,7 @@ function draw(){
  zoomButton.setAttribute('aria-pressed',String(zoomMm));
  const start=X+Math.floor(length/10)*10*S;
  $('board').classList.toggle('zoom-mm',zoomMm);
- $('board').setAttribute('viewBox',zoomMm?(start-7)+' 38 65 125':'0 0 900 240');
+ $('board').setAttribute('viewBox',zoomMm?(start-7)+' '+(38+pairOffset())+' 65 125':pairMode?'120 0 710 340':'0 0 900 240');
  $('board').setAttribute('preserveAspectRatio',zoomMm?'none':'xMidYMid meet');
  let marks='',bands='',guides='';
  const last=style===0||waitingForMm?10:1, whole=Math.floor(length/10)*10;
@@ -108,14 +172,14 @@ function draw(){
   }
   guides+='<path d="M '+(X+length*S)+' 42 V '+rulerTop()+'" stroke="#344957" stroke-dasharray="4 3"/>';
  }
- $('board').innerHTML=bands+object()+guides+'<g id="ruler" transform="translate('+rx+' '+ry+')"><rect width="632" height="55" rx="5" fill="#fff0b8" stroke="#c68f37"/>'+marks+'</g>';
+ $('board').innerHTML='<g transform="translate(0 '+pairOffset()+')">'+bands+'</g>'+(pairMode?pairObjects():object())+guides+(comparing?'':'<g id="ruler" transform="translate('+rx+' '+ry+')"><rect width="632" height="55" rx="5" fill="#fff0b8" stroke="#c68f37"/>'+marks+'</g>');
 }
 function point(e){const svg=$('board');const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
 const board=$('board');board.style.touchAction='none';
 board.onpointerdown=e=>{
  if(zoomMm){countMmCell(e);return;}
  if(zoomMm||mmIntro||passed||drag||!e.target.closest('#ruler'))return;const p=point(e);drag={id:e.pointerId,x:p.x-rx,y:p.y-ry};board.setPointerCapture(e.pointerId)};
-board.onpointermove=e=>{if(drag?.id!==e.pointerId)return;const p=point(e);rx=Math.min(265,Math.max(0,p.x-drag.x));ry=Math.min(183,Math.max(0,p.y-drag.y));draw()};
+board.onpointermove=e=>{if(drag?.id!==e.pointerId)return;const p=point(e);rx=Math.min(265,Math.max(0,p.x-drag.x));ry=Math.min(pairMode?280:183,Math.max(0,p.y-drag.y));draw()};
 board.onpointerup=e=>{if(drag?.id!==e.pointerId)return;drag=null;const tolerance=snapTolerance();if(Math.abs(rx+zero-X)<=tolerance.x&&Math.abs(ry-rulerTop())<=tolerance.y){rx=X-zero;ry=rulerTop();$('message').textContent='右はしの めもりを よもう。';$('message').className=''}draw()};
 board.onpointercancel=board.onlostpointercapture=()=>{drag=null};
 function field(unit,correct){
@@ -211,7 +275,7 @@ for(const key of ['0','1','2','3','4','5','6','7','8','9','⌫']){
  if(key==='⌫')button.className='delete-digit';
  if(key==='⌫')button.setAttribute('aria-label','数字を1つけす');
  button.onclick=()=>{
-  if(passed)return;
+  if(passed||comparing)return;
   const {box,unit}=activeAnswer;
   const digits=key==='⌫'?box.value.slice(0,-1):
    box.value.length>=(unit==='cm'?2:1)||box.value==='0'?key:box.value+key;
@@ -252,14 +316,14 @@ function guide(type){
  help=type;const msg=$('message');msg.className=type==='mm'?'green':type==='cm'?'blue':'';
  msg.textContent=type==='zero'?(Math.abs(rx+zero-X)<=snapTolerance().x?'ものの すぐ下に じょうぎを おこう。':'左はしに 0の線を あわせよう。'):type==='mm'?(zoomMm?'みどりの マスを、ひだりから ひとつずつ おそう。':'みどりの ところは、1 mmが いくつぶん？'):'あおい ところは、1 cmが いくつぶん？';draw();
 }
-$('hint').onclick=()=>guide(!aligned()?'zero':answers.find(a=>a.value!==a.correct)?.unit??(mode==='cm'?'cm':'mm'));
+$('hint').onclick=()=>{if(comparing)comparisonHint();else guide(!aligned()?'zero':answers.find(a=>a.value!==a.correct)?.unit??(mode==='cm'?'cm':'mm'))};
 $('check').onclick=()=>{
  if(passed)return;
  if(!aligned()){guide('zero');return}
  const missing=answers.find(a=>a.value===null||a.ink<24);
  if(missing){$('message').className='';$('message').textContent=missing.value===null?'数字を えらぼう。':missing.unit+'を ゆびで なぞろう。';return}
  const wrong=answers.find(a=>a.value!==a.correct);if(wrong){guide(wrong.unit);return}
- passed=true;$('hint').disabled=true;$('message').className='green';$('message').textContent='せいかい！ '+answers.map(a=>a.correct+' '+a.unit).join(' ');$('check').disabled=true;$('correct-mark').hidden=false;advanceTimer=setTimeout(()=>{if(++n===data[4].length)screen('done');else question()},1100);
+ passed=true;$('hint').disabled=true;$('message').className='green';$('message').textContent='せいかい！ '+answers.map(a=>a.correct+' '+a.unit).join(' ');$('check').disabled=true;$('correct-mark').hidden=false;advanceTimer=setTimeout(()=>{if(pairMode)nextPair();else if(++n===data[4].length)screen('done');else question()},1100);
 };
 
 document.addEventListener('contextmenu',e=>e.preventDefault());
