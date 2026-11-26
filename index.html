@@ -17,6 +17,15 @@ body:has(#play:not([hidden])){position:fixed;inset:0}
 #measure-stage #board,#play.pair-mode #board{height:auto;align-self:stretch}#play.comparing #measure-stage,#play.comparing #board{min-height:180px}#play.comparing .pair-answer{padding:4px}#play.comparing #measure-stage{flex:1 1 180px}#play.comparing #pair-fields{gap:4px}
 #measure-stage{height:0;flex:1 1 0}#measure-stage #board,#play.pair-mode #board{height:100%;min-height:0;max-height:100%}#pair-fields{min-height:0;width:420px}.pair-answer canvas{width:128px}.pair-answer{min-height:0}#play.pair-mode{min-height:0}
 #play.comparing #fields{display:none}.compare-cell{flex:0 0 44px}.compare-cells strong{flex:0 0 30px}
+/* Keep the measurement board at its original full-screen width and flex height. */
+#measure-stage{display:contents}
+#measure-stage #board,#play.pair-mode #board{width:100%;height:165px;min-height:165px;max-height:none;flex:1 0 165px;align-self:stretch}
+#measure-stage #board.zoom-mm{width:min(100%,560px);align-self:center}
+#pair-fields{width:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto;gap:12px;flex:0 0 auto}
+.pair-answer{padding:6px 10px;gap:4px}.pair-answer canvas{height:64px}.pair-answer .number-box{height:58px}
+#play.comparing #pair-fields{gap:12px}
+#play:has(#show-mm:not([hidden])) #board{flex:0 0 auto;height:clamp(165px,24vw,300px)}
+@media(max-height:540px){#measure-stage #board,#play.pair-mode #board{height:120px;min-height:120px;flex-basis:120px}#play:has(#show-mm:not([hidden])) #board{height:120px}}
 </style>
 <main><header><h1>じょうぎで はかろう</h1><button id="home" hidden>課題をえらぶ</button></header>
 <section id="menu"><h2>先生と課題をえらぼう</h2><p><select id="course" aria-label="課題"></select></p><div id="intro"></div><button class="primary" id="start">もんだいを はじめる</button></section>
@@ -154,7 +163,7 @@ function draw(){
  zoomButton.setAttribute('aria-pressed',String(zoomMm));
  const start=X+Math.floor(length/10)*10*S;
  $('board').classList.toggle('zoom-mm',zoomMm);
- $('board').setAttribute('viewBox',zoomMm?(start-7)+' '+(38+pairOffset())+' 65 125':pairMode?'120 0 710 340':'0 0 900 240');
+ $('board').setAttribute('viewBox',zoomMm?(start-7)+' '+(38+pairOffset())+' 65 125':pairMode?'0 0 900 340':'0 0 900 240');
  $('board').setAttribute('preserveAspectRatio',zoomMm||pairMode?'none':'xMidYMid meet');
  let marks='',bands='',guides='';
  const last=style===0||waitingForMm?10:1, whole=Math.floor(length/10)*10;
