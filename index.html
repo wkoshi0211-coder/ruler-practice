@@ -154,7 +154,7 @@ function draw(){
  const start=X+Math.floor(length/10)*10*S;
  $('board').classList.toggle('zoom-mm',zoomMm);
  $('board').setAttribute('viewBox',zoomMm?(start-7)+' '+(38+pairOffset())+' 65 125':pairMode?'120 0 710 340':'0 0 900 240');
- $('board').setAttribute('preserveAspectRatio',zoomMm?'none':'xMidYMid meet');
+ $('board').setAttribute('preserveAspectRatio',zoomMm||pairMode?'none':'xMidYMid meet');
  let marks='',bands='',guides='';
  const last=style===0||waitingForMm?10:1, whole=Math.floor(length/10)*10;
  for(let i=0;i<=120;i+=last){
@@ -162,7 +162,7 @@ function draw(){
   marks+='<path d="M '+x+' 0 v '+(major?25:i%5===0?17:10)+'" stroke="#233443" stroke-width="'+(major?2:1)+'"/>';
   if(major)marks+='<text x="'+x+'" y="44" text-anchor="middle" font-size="16">'+i/10+'</text>';
  }
- if(!aligned()&&(help==='zero'||data===courses[0]&&n>=3&&n<7))guides='<path d="M '+X+' 62 V 139" stroke="#19776d" stroke-width="2" stroke-dasharray="5 4"/>';
+ if(!aligned()&&(help==='zero'||data===courses[0]&&n>=3&&n<7))guides='<path d="M '+X+' '+(62+pairOffset())+' V '+(139+pairOffset())+'" stroke="#19776d" stroke-width="2" stroke-dasharray="5 4"/>';
  if(!waitingForMm&&aligned()&&(help==='cm'||help==='mm'||style===1&&mode==='both'&&n<3)){
   if(mode!=='mm')for(let i=0;i<whole;i+=10)bands+='<rect x="'+(X+i*S)+'" y="44" width="49" height="17" rx="2" fill="#4987d4"/>';
   if(mode!=='cm')for(let i=whole;i<length;i++){
@@ -171,7 +171,7 @@ function draw(){
     bands+='<rect data-mm-cell="'+i+'" tabindex="0" role="button" aria-label="1 mmのマス" aria-pressed="'+countedMm.has(i)+'" x="'+x+'" y="39" width="5" height="28" fill="'+(countedMm.has(i)?'#14663b':'#a4d4b8')+'" stroke="#367854" stroke-width=".25"/>';
    }else bands+='<rect x="'+x+'" y="44" width="4" height="17" fill="#228b50"/>';
   }
-  guides+='<path d="M '+(X+length*S)+' 42 V '+rulerTop()+'" stroke="#344957" stroke-dasharray="4 3"/>';
+  guides+='<path d="M '+(X+length*S)+' '+(42+pairOffset())+' V '+rulerTop()+'" stroke="#344957" stroke-dasharray="4 3"/>';
  }
  $('board').innerHTML='<g transform="translate(0 '+pairOffset()+')">'+bands+'</g>'+(pairMode?pairObjects():object())+guides+(comparing?'':'<g id="ruler" transform="translate('+rx+' '+ry+')"><rect width="632" height="55" rx="5" fill="#fff0b8" stroke="#c68f37"/>'+marks+'</g>');
 }
